@@ -1,0 +1,6 @@
+{
+  "name": "RAA Vision Intelligent Aircraft Detection System",
+  "description": "نظام الكشف الذكي عن الطائرات - كشف وتحليل وتصنيف طائرات متطور بالذكاء الاصطناعي",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
