@@ -162,6 +162,10 @@ export default function App() {
   const [simulatedCounter, setSimulatedCounter] = useState<number>(14);
   const [videoTargets, setVideoTargets] = useState<any[]>([]);
 
+  // Emergency Siren state
+  const emergencySirenRef = useRef<HTMLAudioElement | null>(null);
+  const [isSirenPlaying, setIsSirenPlaying] = useState(false);
+
   // Real YOLO video detection state
   const [yoloVideoDetecting, setYoloVideoDetecting] = useState(false);
   const [yoloVideoDetections, setYoloVideoDetections] = useState<Aircraft[]>([]);
@@ -546,11 +550,29 @@ export default function App() {
 
   const handlePlayEmergencySiren = () => {
     try {
-      const audio = new Audio(emergencySirenSound);
-      audio.volume = 0.6;
-      audio.play().catch(e => console.warn("Audio play blocked", e));
+      if (isSirenPlaying) {
+        // Stop playing
+        if (emergencySirenRef.current) {
+          emergencySirenRef.current.pause();
+          emergencySirenRef.current.currentTime = 0;
+        }
+        setIsSirenPlaying(false);
+      } else {
+        // Start playing
+        if (!emergencySirenRef.current) {
+          emergencySirenRef.current = new Audio(emergencySirenSound);
+          emergencySirenRef.current.volume = 0.6;
+          emergencySirenRef.current.onended = () => setIsSirenPlaying(false);
+        }
+        emergencySirenRef.current.currentTime = 0;
+        emergencySirenRef.current.play().catch(e => {
+          console.warn("Audio play blocked", e);
+          setIsSirenPlaying(false);
+        });
+        setIsSirenPlaying(true);
+      }
     } catch (e) {
-      console.warn("Failed to play emergency siren", e);
+      console.warn("Failed to toggle emergency siren", e);
     }
   };
 
@@ -1347,11 +1369,19 @@ export default function App() {
                 
                 <button
                   onClick={handlePlayEmergencySiren}
-                  className="w-full py-4 px-4 rounded-xl border border-rose-500/30 bg-slate-900/40 hover:bg-rose-500/10 hover:border-rose-500/60 text-white flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group"
+                  className={`w-full py-4 px-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group ${
+                    isSirenPlaying 
+                      ? "bg-rose-500/20 border-rose-500/80 hover:bg-rose-500/30 text-white shadow-[0_0_20px_rgba(244,63,94,0.4)] animate-pulse" 
+                      : "border-rose-500/30 bg-slate-900/40 hover:bg-rose-500/10 hover:border-rose-500/60 text-white"
+                  }`}
                 >
-                  <AlertTriangle className="w-8 h-8 text-rose-500 group-hover:scale-110 transition-transform" />
-                  <span className="text-lg font-extrabold text-rose-500 tracking-tight">إطلاق صفارات الإنذار الفورية!</span>
-                  <span className="text-[9px] font-mono font-bold text-rose-400/80 uppercase tracking-widest">Amplify Emergency Satellite Siren</span>
+                  <AlertTriangle className={`w-8 h-8 text-rose-500 transition-transform ${isSirenPlaying ? "scale-110" : "group-hover:scale-110"}`} />
+                  <span className="text-lg font-extrabold text-rose-500 tracking-tight">
+                    {isSirenPlaying ? "إيقاف صفارات الإنذار" : "إطلاق صفارات الإنذار الفورية!"}
+                  </span>
+                  <span className="text-[9px] font-mono font-bold text-rose-400/80 uppercase tracking-widest">
+                    {isSirenPlaying ? "Deactivate Emergency Siren" : "Amplify Emergency Satellite Siren"}
+                  </span>
                 </button>
 
                 <div className="text-center mt-2">
