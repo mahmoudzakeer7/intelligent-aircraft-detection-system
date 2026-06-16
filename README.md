@@ -11,7 +11,7 @@ This system combines:
 
 ## How to Run
 
-### Step 1: Start the YOLOv8 Python Service
+### Step 1: Start the YOLOv11 Python Service
 
 ```bash
 # Double-click OR run in terminal:
