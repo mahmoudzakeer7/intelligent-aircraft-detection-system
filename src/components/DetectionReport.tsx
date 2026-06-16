@@ -146,35 +146,6 @@ export const DetectionReport: React.FC<DetectionReportProps> = ({
         </div>
       )}
 
-      {/* ── Primary Roles ──────────────────────────────────────────────────── */}
-      {aircraft.primary_roles && aircraft.primary_roles.length > 0 && (
-        <div className="bg-slate-900/60 rounded-xl border border-white/5 p-3.5">
-          <div className="flex items-center gap-1.5 mb-2.5">
-            <Zap className="w-3.5 h-3.5 text-sky-400" />
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Primary Roles</span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {aircraft.primary_roles.map((role, i) => (
-              <Pill key={i} color="bg-sky-500/10 text-sky-300 border-sky-500/30">{role}</Pill>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Recognition Features ───────────────────────────────────────────── */}
-      {aircraft.recognition_features && aircraft.recognition_features.length > 0 && (
-        <div className="bg-slate-900/60 rounded-xl border border-white/5 p-3.5">
-          <div className="flex items-center gap-1.5 mb-2.5">
-            <Eye className="w-3.5 h-3.5 text-sky-400" />
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Recognition Features</span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {aircraft.recognition_features.map((feat, i) => (
-              <Pill key={i} color="bg-violet-500/10 text-violet-300 border-violet-500/30">{feat}</Pill>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ── Strengths & Weaknesses ─────────────────────────────────────────── */}
       {((aircraft.strengths && aircraft.strengths.length > 0) || (aircraft.weaknesses && aircraft.weaknesses.length > 0)) && (
