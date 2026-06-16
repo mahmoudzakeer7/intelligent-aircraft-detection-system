@@ -29,7 +29,9 @@ import {
   Brain,
   ScanLine,
   SkipForward,
+  FileDown,
 } from "lucide-react";
+import { generateDetectionPDF } from "./utils/generatePDF";
 import { Header } from "./components/Header";
 import { Metrics } from "./components/Metrics";
 import { HistoryLog } from "./components/HistoryLog";
@@ -146,6 +148,7 @@ export default function App() {
   // Hover & Bounding State
   const [hoveredAircraftIndex, setHoveredAircraftIndex] = useState<number | null>(null);
   const [selectedAircraftIndex, setSelectedAircraftIndex] = useState<number | null>(null);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
   const [minConfidence, setMinConfidence] = useState<number>(30);
 
   // Video Detection states
@@ -488,6 +491,54 @@ export default function App() {
   const displayedAircrafts = detectionResult?.aircrafts.filter(
     (a) => a.confidence * 100 >= minConfidence
   ) || [];
+
+  // ── PDF Download handlers ─────────────────────────────────────────────────
+  const handleDownloadPDF = async () => {
+    if (!selectedImage || displayedAircrafts.length === 0) return;
+    setIsPdfLoading(true);
+    try {
+      await generateDetectionPDF({
+        imageSrc: selectedImage,
+        videoFrame: null,
+        detectionResult,
+        mode: "image",
+        gpsCoords: metrics.gpsCoords,
+      });
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
+
+  const handleDownloadVideoPDF = async () => {
+    const video = videoPlayerRef.current;
+    if (!video || yoloVideoDetections.length === 0) return;
+    setIsPdfLoading(true);
+    try {
+      // Capture current video frame to base64
+      const canvas = document.createElement("canvas");
+      canvas.width  = video.videoWidth  || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const frameDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+
+      const videoResult = {
+        totalCount: yoloVideoDetections.length,
+        summaryAr: `Live video frame capture — ${yoloFrameCount} frames processed`,
+        aircrafts: yoloVideoDetections,
+        detectionSource: "yolo" as const,
+      };
+      await generateDetectionPDF({
+        imageSrc: frameDataUrl,
+        videoFrame: null,
+        detectionResult: videoResult,
+        mode: "video",
+        gpsCoords: metrics.gpsCoords,
+      });
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
 
   const t = translations[lang];
   const isLight = theme === "light";
@@ -951,6 +1002,21 @@ export default function App() {
                     theme={theme}
                     palette={BOX_PALETTE}
                   />
+
+                  {/* PDF Download Button */}
+                  {displayedAircrafts.length > 0 && selectedImage && (
+                    <button
+                      onClick={handleDownloadPDF}
+                      disabled={isPdfLoading}
+                      className="w-full mt-3 py-3 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-sky-900/40 transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-wait hover:scale-[1.01] active:scale-[0.99]"
+                    >
+                      {isPdfLoading ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" />Generating PDF...</>
+                      ) : (
+                        <><FileDown className="w-4 h-4" />Download Detection Report (PDF)</>
+                      )}
+                    </button>
+                  )}
                 </div>
 
                 {/* Sub info coordinates catalog */}
@@ -1240,6 +1306,21 @@ export default function App() {
                     theme={theme}
                     palette={BOX_PALETTE}
                   />
+
+                  {/* PDF download for video frame */}
+                  {yoloVideoDetections.length > 0 && (
+                    <button
+                      onClick={handleDownloadVideoPDF}
+                      disabled={isPdfLoading}
+                      className="w-full mt-3 py-2.5 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-sky-900/40 transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-wait hover:scale-[1.01] active:scale-[0.99]"
+                    >
+                      {isPdfLoading ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" />Generating PDF...</>
+                      ) : (
+                        <><FileDown className="w-4 h-4" />Download Frame Report (PDF)</>
+                      )}
+                    </button>
+                  )}
                 </div>
               )}
 
