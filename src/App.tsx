@@ -635,22 +635,8 @@ export default function App() {
               }`}
             >
               <Zap className={`w-3.5 h-3.5 ${detectionMode === "yolo" ? "text-emerald-400" : ""}`} />
-              🤖 YOLOv8 Local Model
+              🤖 YOLO
               {detectionMode === "yolo" && <span className="text-[9px] font-mono bg-emerald-500/20 px-1.5 py-0.5 rounded">ACTIVE</span>}
-            </button>
-
-            {/* Gemini toggle */}
-            <button
-              onClick={() => setDetectionMode("gemini")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all duration-200 cursor-pointer ${
-                detectionMode === "gemini"
-                  ? "bg-violet-500/20 border-violet-500/60 text-violet-300 shadow-[0_0_12px_rgba(139,92,246,0.25)]"
-                  : "bg-slate-900/50 border-white/5 text-slate-400 hover:text-white hover:border-violet-500/30"
-              }`}
-            >
-              <Sparkles className={`w-3.5 h-3.5 ${detectionMode === "gemini" ? "text-violet-400" : ""}`} />
-              ✨ Gemini AI
-              {detectionMode === "gemini" && <span className="text-[9px] font-mono bg-violet-500/20 px-1.5 py-0.5 rounded">ACTIVE</span>}
             </button>
 
             {/* YOLO status indicator */}
@@ -715,17 +701,6 @@ export default function App() {
           >
             <Video className="w-3.5 h-3.5 animate-pulse" />
             {t.liveRadarStream}
-          </button>
-          <button
-            onClick={() => setActiveTab("threat")}
-            className={`flex-1 py-2.5 px-4 rounded-lg font-bold text-xs transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
-              activeTab === "threat"
-                ? "bg-gradient-to-r from-rose-600 to-rose-500 text-white shadow-lg"
-                : isLight ? "text-slate-550 hover:text-rose-600" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <ShieldAlert className="w-3.5 h-3.5 animate-bounce" />
-            {t.threatAssessment}
           </button>
         </div>
 
@@ -911,12 +886,6 @@ export default function App() {
                           className="px-4 py-2 bg-emerald-600/20 border border-emerald-400/30 text-emerald-300 text-xs rounded-xl font-bold cursor-pointer"
                         >
                           Recheck YOLO Service
-                        </button>
-                        <button 
-                          onClick={() => { setDetectionMode("gemini"); setAnalysisError(null); }}
-                          className="px-4 py-2 bg-violet-600/20 border border-violet-400/30 text-violet-300 text-xs rounded-xl font-bold cursor-pointer"
-                        >
-                          Switch to Gemini AI
                         </button>
                         <button 
                           onClick={() => handleSelectPreset(SAMPLE_PRESETS[0])}
@@ -1110,7 +1079,7 @@ export default function App() {
                     </span>
                     <div className="text-left">
                       <h3 className="text-sm font-black text-slate-100">
-                        {detectionMode === "yolo" ? "🤖 YOLOv8 Real-Time Video Analysis" : "Tactical Satellite Monitoring & Live Viewports"}
+                        {detectionMode === "yolo" ? "🤖 YOLO Real-Time Video Analysis" : "Tactical Satellite Monitoring & Live Viewports"}
                       </h3>
                       <span className="text-[10.5px] text-slate-400 block uppercase font-mono tracking-wider">
                         {detectionMode === "yolo" && yoloStatus.online
