@@ -30,6 +30,7 @@ import {
   ScanLine,
   SkipForward,
   FileDown,
+  Volume2,
 } from "lucide-react";
 import { generateDetectionPDF } from "./utils/generatePDF";
 import { Header } from "./components/Header";
@@ -39,6 +40,9 @@ import { ThreatAssessment } from "./components/ThreatAssessment";
 import { DetectionReport, BOX_PALETTE, getPalette } from "./components/DetectionReport";
 import { Aircraft, DetectionResult, TabType, RadarLog, SystemMetrics, DetectionMode, YoloServiceStatus } from "./types";
 import { translations } from "./translations";
+
+// @ts-ignore
+import emergencySirenSound from "./tithuh-warning-545568.mp3";
 
 // Aircraft image presets — reliable public domain sources
 const SAMPLE_PRESETS = [
@@ -537,6 +541,16 @@ export default function App() {
       });
     } finally {
       setIsPdfLoading(false);
+    }
+  };
+
+  const handlePlayEmergencySiren = () => {
+    try {
+      const audio = new Audio(emergencySirenSound);
+      audio.volume = 0.6;
+      audio.play().catch(e => console.warn("Audio play blocked", e));
+    } catch (e) {
+      console.warn("Failed to play emergency siren", e);
     }
   };
 
@@ -1324,13 +1338,25 @@ export default function App() {
                 </div>
               )}
 
-              {/* Incremental seen tally */}
-              <div className="glass-card p-5 rounded-2xl text-center flex flex-col justify-center border border-white/5">
-                <p className="text-slate-400 text-xs font-bold uppercase mb-2">TOTAL LIVE TARGETS SEEN</p>
-                <span className="text-4xl font-black text-emerald-400 font-mono tracking-wider animate-pulse">
-                  {simulatedCounter}
-                </span>
-                <span className="text-[9px] text-slate-500 block font-mono mt-1">FLEET TALLY ACCUMULATED</span>
+              {/* Amplify Emergency Satellite Siren */}
+              <div className="glass-card p-5 rounded-2xl border border-white/5 flex flex-col gap-3">
+                <div className="flex justify-between items-center text-[10px] text-slate-500 font-mono">
+                  <span>Sound Effect by <a href="#" className="underline">freesound_community</a> from <a href="#" className="underline">Pixabay</a></span>
+                  <span className="flex items-center gap-1"><Volume2 className="w-3 h-3 text-rose-500" /> :مصدر الصوت</span>
+                </div>
+                
+                <button
+                  onClick={handlePlayEmergencySiren}
+                  className="w-full py-4 px-4 rounded-xl border border-rose-500/30 bg-slate-900/40 hover:bg-rose-500/10 hover:border-rose-500/60 text-white flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group"
+                >
+                  <AlertTriangle className="w-8 h-8 text-rose-500 group-hover:scale-110 transition-transform" />
+                  <span className="text-lg font-extrabold text-rose-500 tracking-tight">إطلاق صفارات الإنذار الفورية!</span>
+                  <span className="text-[9px] font-mono font-bold text-rose-400/80 uppercase tracking-widest">Amplify Emergency Satellite Siren</span>
+                </button>
+
+                <div className="text-center mt-2">
+                  <span className="text-[10px] font-mono text-slate-500 tracking-wider">ALERT FREQ CHANNELS: 156.8 MHz (VHF Ch 16)</span>
+                </div>
               </div>
 
 
