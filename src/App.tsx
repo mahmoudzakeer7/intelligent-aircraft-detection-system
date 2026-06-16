@@ -1267,44 +1267,7 @@ export default function App() {
                 <span className="text-[9px] text-slate-500 block font-mono mt-1">FLEET TALLY ACCUMULATED</span>
               </div>
 
-              {/* Interactive Target Signal Feed ticker */}
-              <div className="glass-card p-5 rounded-2xl flex flex-col border border-sky-500/10 flex-grow h-full min-h-[220px]">
-                <h4 className="text-[15px] font-black text-slate-200 uppercase tracking-widest pb-3 border-b border-white/5 mb-4 flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-ping"></span>
-                  <span>Detected Broadcast Target Log</span>
-                </h4>
 
-                <div className="flex-1 overflow-y-auto space-y-3 max-h-[380px] pr-1 ml-1 text-right">
-                  {videoTargets.length === 0 ? (
-                    <div className="h-full flex items-center justify-center text-slate-500 text-xs text-center py-12" dir="ltr">
-                      Press play to begin capturing and classifying active radar target coordinates.
-                    </div>
-                  ) : (
-                    videoTargets.map((tgt, i) => (
-                      <div 
-                        key={i} 
-                        className="bg-slate-950/90 p-4 rounded-xl border border-white/10 hover:border-emerald-500/40 transition-all text-sm font-mono leading-relaxed shadow-lg hover:shadow-[0_0_10px_rgba(52,211,153,0.15)]"
-                        dir="ltr"
-                      >
-                        <div className="flex justify-between items-center text-emerald-400 font-black mb-2 text-[14px]">
-                          <span>{tgt.id}</span>
-                          <span className="text-slate-100 text-right">{tgt.model}</span>
-                        </div>
-                        <div className="flex justify-between text-[12px] text-slate-300">
-                          <span>ALT: <strong className="text-white">{tgt.altitude.toLocaleString()}</strong> FT</span>
-                          <span>SPD: <strong className="text-white">{tgt.speed}</strong> KT</span>
-                        </div>
-                        <div className="flex justify-between text-[11px] text-slate-400 mt-2 border-t border-white/5 pt-2">
-                          <span>BEARING: {tgt.bearing}°</span>
-                          <span className={`font-semibold uppercase text-[11px] ${tgt.type === "Military" ? "text-rose-400 font-bold" : "text-sky-400"}`}>
-                            {tgt.type === "Military" ? "MIL-GRADE / COMBAT" : "CIVILIAN / FLIGHT"}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         )}
