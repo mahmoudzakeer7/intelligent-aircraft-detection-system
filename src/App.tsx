@@ -1053,6 +1053,35 @@ export default function App() {
                       )}
                     </button>
                   )}
+
+                  {/* Amplify Emergency Satellite Siren (Image Tab) */}
+                  <div className="border-t border-white/5 pt-4 mt-2">
+                    <div className="flex justify-between items-center text-[10px] text-slate-500 font-mono mb-3">
+                      <span>Sound Effect by <a href="#" className="underline">freesound_community</a> from <a href="#" className="underline">Pixabay</a></span>
+                      <span className="flex items-center gap-1"><Volume2 className="w-3 h-3 text-rose-500" /> :مصدر الصوت</span>
+                    </div>
+                    
+                    <button
+                      onClick={handlePlayEmergencySiren}
+                      className={`w-full py-4 px-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group ${
+                        isSirenPlaying 
+                          ? "bg-rose-500/20 border-rose-500/80 hover:bg-rose-500/30 text-white shadow-[0_0_20px_rgba(244,63,94,0.4)] animate-pulse" 
+                          : "border-rose-500/30 bg-slate-900/40 hover:bg-rose-500/10 hover:border-rose-500/60 text-white"
+                      }`}
+                    >
+                      <AlertTriangle className={`w-8 h-8 text-rose-500 transition-transform ${isSirenPlaying ? "scale-110" : "group-hover:scale-110"}`} />
+                      <span className="text-lg font-extrabold text-rose-500 tracking-tight">
+                        {isSirenPlaying ? "إيقاف صفارات الإنذار" : "إطلاق صفارات الإنذار الفورية!"}
+                      </span>
+                      <span className="text-[9px] font-mono font-bold text-rose-400/80 uppercase tracking-widest">
+                        {isSirenPlaying ? "Deactivate Emergency Siren" : "Amplify Emergency Satellite Siren"}
+                      </span>
+                    </button>
+
+                    <div className="text-center mt-3">
+                      <span className="text-[10px] font-mono text-slate-500 tracking-wider">ALERT FREQ CHANNELS: 156.8 MHz (VHF Ch 16)</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Sub info coordinates catalog */}
