@@ -34,7 +34,7 @@ import { Header } from "./components/Header";
 import { Metrics } from "./components/Metrics";
 import { HistoryLog } from "./components/HistoryLog";
 import { ThreatAssessment } from "./components/ThreatAssessment";
-import { DetectionReport } from "./components/DetectionReport";
+import { DetectionReport, BOX_PALETTE, getPalette } from "./components/DetectionReport";
 import { Aircraft, DetectionResult, TabType, RadarLog, SystemMetrics, DetectionMode, YoloServiceStatus } from "./types";
 import { translations } from "./translations";
 
@@ -877,16 +877,12 @@ export default function App() {
                           }}
                         />
 
-                        {/* Bounding boxes — % of THIS wrapper = % of the actual image */}
+                        {/* Bounding boxes — unique color per object index from the global palette */}
                         {!isAnalyzing && !analysisError && displayedAircrafts.map((box, i) => {
                           const isHovered = hoveredAircraftIndex === i;
                           const isSelected = selectedAircraftIndex === i;
                           const isYoloDet = detectionResult?.detectionSource === "yolo";
-                          const isMilitary = box.aircraftType.toLowerCase().includes("military") || box.aircraftType.includes("عسكري");
-
-                          const colorClass = isMilitary ? "border-rose-500" : isYoloDet ? "border-emerald-400" : "border-sky-400";
-                          const bgClass    = isMilitary ? "bg-rose-500/10"  : isYoloDet ? "bg-emerald-500/10"  : "bg-sky-500/10";
-                          const labelBg    = isMilitary ? "bg-rose-600"     : isYoloDet ? "bg-emerald-700"     : "bg-sky-600";
+                          const pal = getPalette(i);
 
                           // 0–1000 coordinate scale → percentage of image
                           const top    = box.ymin / 10;
@@ -900,21 +896,21 @@ export default function App() {
                               onMouseEnter={() => setHoveredAircraftIndex(i)}
                               onMouseLeave={() => setHoveredAircraftIndex(null)}
                               onClick={() => setSelectedAircraftIndex(i)}
-                              className={`absolute border-2 rounded transition-all duration-200 cursor-pointer ${colorClass} ${bgClass} ${
+                              className={`absolute border-2 rounded transition-all duration-200 cursor-pointer ${pal.border} ${pal.bg} ${
                                 isHovered || isSelected
-                                  ? "ring-2 ring-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)] z-30"
-                                  : "z-20 opacity-80"
+                                  ? `ring-2 ${pal.ring} shadow-lg z-30`
+                                  : "z-20 opacity-85"
                               }`}
                               style={{ top: `${top}%`, left: `${left}%`, width: `${width}%`, height: `${height}%` }}
                             >
-                              {/* Corner reticles */}
-                              <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-emerald-400" />
-                              <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-emerald-400" />
-                              <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-emerald-400" />
-                              <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-emerald-400" />
+                              {/* Corner reticles — use same palette color */}
+                              <div className={`absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 ${pal.border}`} />
+                              <div className={`absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 ${pal.border}`} />
+                              <div className={`absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 ${pal.border}`} />
+                              <div className={`absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 ${pal.border}`} />
 
                               {/* Label badge */}
-                              <span className={`absolute -top-6 left-0 ${labelBg} text-white font-mono font-bold text-[9px] py-0.5 px-2 rounded whitespace-nowrap z-40 shadow-md`}>
+                              <span className={`absolute -top-6 left-0 ${pal.badge} text-white font-mono font-bold text-[9px] py-0.5 px-2 rounded whitespace-nowrap z-40 shadow-md`}>
                                 [{i + 1}] {box.rawClass || box.aircraftName} ({Math.round(box.confidence * 100)}%)
                                 {isYoloDet && <span className="ml-1 opacity-70">🤖</span>}
                               </span>
@@ -932,31 +928,29 @@ export default function App() {
                   )}
                 </div>
 
-                {/* ── Full Intelligence Report Panel ──────────────────────────────────── */}
+                {/* ── Full Intelligence Report Panel: ALL objects with their unique colours ── */}
                 <div className="p-5 border-t border-white/5 bg-slate-950/45 flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-1">
                     <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 status-active-pulse"></span>
-                      Intelligence Dossier
+                      Detection Report
+                      {displayedAircrafts.length > 0 && (
+                        <span className="text-[9px] font-mono bg-slate-800 border border-white/10 px-1.5 py-0.5 rounded text-slate-400 ml-1">
+                          {displayedAircrafts.length} object{displayedAircrafts.length !== 1 ? "s" : ""}
+                        </span>
+                      )}
                     </h4>
                     <span className="text-[9px] font-mono font-medium text-emerald-400 tracking-wider">SECURE TRANSMISSION TYPE-6</span>
                   </div>
 
                   <DetectionReport
-                    aircraft={selectedAircraftIndex !== null ? displayedAircrafts[selectedAircraftIndex] : null}
-                    index={selectedAircraftIndex}
-                    totalDetected={displayedAircrafts.length}
+                    aircrafts={displayedAircrafts}
+                    selectedIndex={selectedAircraftIndex}
+                    onSelectIndex={setSelectedAircraftIndex}
                     detectionResult={detectionResult}
                     theme={theme}
+                    palette={BOX_PALETTE}
                   />
-
-                  {/* Executive summary bar */}
-                  {detectionResult?.summaryAr && (
-                    <div className="bg-sky-500/5 p-3 rounded-xl border border-sky-400/25 text-[11px] text-sky-200" dir="ltr">
-                      <span className="font-extrabold text-sky-400 block mb-1">▶ Executive Airspace Summary</span>
-                      {detectionResult.summaryAr}
-                    </div>
-                  )}
                 </div>
 
                 {/* Sub info coordinates catalog */}
@@ -1052,13 +1046,13 @@ export default function App() {
                           onClick={toggleVideoPlayback}
                         />
 
-                        {/* YOLO real bounding boxes overlaid on video — % of wrapper = % of video pixels */}
+                        {/* YOLO real bounding boxes on video — unique palette color per object index */}
                         {detectionMode === "yolo" && isPlaying && yoloVideoDetections.map((box, i) => {
-                          const isMilitary = box.aircraftType.toLowerCase().includes("military") || box.aircraftType.includes("عسكري");
+                          const pal = getPalette(i);
                           return (
                             <div
                               key={i}
-                              className={`absolute border-2 rounded ${isMilitary ? "border-rose-400 bg-rose-500/15" : "border-emerald-400 bg-emerald-500/15"} pointer-events-none z-20`}
+                              className={`absolute border-2 rounded ${pal.border} ${pal.bg} pointer-events-none z-20`}
                               style={{
                                 top: `${box.ymin / 10}%`,
                                 left: `${box.xmin / 10}%`,
@@ -1066,13 +1060,13 @@ export default function App() {
                                 height: `${(box.ymax - box.ymin) / 10}%`,
                               }}
                             >
-                              <span className={`absolute -top-5 left-0 ${isMilitary ? "bg-rose-700" : "bg-emerald-700"} text-white text-[9px] font-mono font-bold px-1.5 py-0.5 rounded whitespace-nowrap`}>
-                                🤖 {box.rawClass || box.aircraftName} {Math.round(box.confidence * 100)}%
+                              <span className={`absolute -top-5 left-0 ${pal.badge} text-white text-[9px] font-mono font-bold px-1.5 py-0.5 rounded whitespace-nowrap`}>
+                                [{i+1}] {box.rawClass || box.aircraftName} {Math.round(box.confidence * 100)}%
                               </span>
-                              <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-emerald-300"></div>
-                              <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-emerald-300"></div>
-                              <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-emerald-300"></div>
-                              <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-emerald-300"></div>
+                              <div className={`absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 ${pal.border}`}></div>
+                              <div className={`absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 ${pal.border}`}></div>
+                              <div className={`absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 ${pal.border}`}></div>
+                              <div className={`absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 ${pal.border}`}></div>
                             </div>
                           );
                         })}
@@ -1231,30 +1225,21 @@ export default function App() {
                 </span>
               </div>
 
-              {/* YOLO current frame detections */}
+              {/* YOLO current frame detections — with palette colors matching the bounding boxes */}
               {detectionMode === "yolo" && videoSrc && (
-                <div className="glass-card p-4 rounded-2xl border border-emerald-500/20 bg-emerald-950/10">
-                  <h4 className="text-xs font-black text-emerald-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Activity className="w-3.5 h-3.5" />
-                    Current Frame Detections
+                <div className="glass-card p-4 rounded-2xl border border-white/8 bg-slate-900/60 flex-1">
+                  <h4 className="text-xs font-black text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                    Live Detection Report
                   </h4>
-                  {yoloVideoDetections.length === 0 ? (
-                    <p className="text-[11px] text-slate-500 text-center py-3">
-                      {isPlaying ? "Waiting for detections..." : "Press play to start YOLO analysis"}
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {yoloVideoDetections.map((det, i) => (
-                        <div key={i} className="bg-slate-900/80 p-2.5 rounded-lg border border-emerald-500/20 text-xs font-mono" dir="ltr">
-                          <div className="flex justify-between items-center">
-                            <span className="text-emerald-300 font-bold">{det.rawClass || det.aircraftName}</span>
-                            <span className="text-emerald-400">{Math.round(det.confidence * 100)}%</span>
-                          </div>
-                          <span className="text-slate-400 text-[9px]">{det.aircraftType}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <DetectionReport
+                    aircrafts={yoloVideoDetections}
+                    selectedIndex={selectedAircraftIndex}
+                    onSelectIndex={setSelectedAircraftIndex}
+                    detectionResult={yoloVideoDetections.length > 0 ? { totalCount: yoloVideoDetections.length, summaryAr: "", aircrafts: yoloVideoDetections, detectionSource: "yolo" } : null}
+                    theme={theme}
+                    palette={BOX_PALETTE}
+                  />
                 </div>
               )}
 
