@@ -3,7 +3,7 @@
 ## Overview
 
 This system combines:
-- **YOLOv8 local model** (`best.pt`) — runs on your machine, real-time detection
+- **YOLOv11 local model** (`best.pt`) — runs on your machine, real-time detection
 - **Gemini AI** — cloud-based analysis with rich descriptions  
 - **React + Vite** frontend — beautiful HUD interface
 
