@@ -849,8 +849,7 @@ export default function App() {
                   <div className="flex items-center gap-3">
                     {detectionResult?.detectionSource && (
                       <span className={`text-[9px] px-2 py-0.5 rounded border font-bold ${sourceColors[detectionResult.detectionSource] || sourceColors.mock}`}>
-                        {detectionResult.detectionSource === "yolo" ? "🤖 YOLOv8 LOCAL" :
-                         detectionResult.detectionSource === "gemini" ? "✨ GEMINI AI" : "📋 DEMO DATA"}
+                        {detectionResult.detectionSource === "yolo" ? "🤖 YOLO LOCAL" : "📋 DEMO DATA"}
                       </span>
                     )}
                     <span className="text-slate-500">ZOOM: 100% SCALE</span>
@@ -867,7 +866,7 @@ export default function App() {
                       </div>
                       <div className="space-y-1 px-4">
                         <p className="text-xs font-bold text-sky-300 uppercase tracking-widest animate-pulse">
-                          {detectionMode === "yolo" ? "🤖 Running YOLOv8 Neural Network..." : "✨ Scanning Airspace via Gemini AI..."}
+                          {detectionMode === "yolo" ? "🤖 Running YOLO Neural Network..." : "✨ Scanning Airspace..."}
                         </p>
                         <p className="text-[10px] text-slate-400 font-mono">
                           {detectionMode === "yolo" ? "LOADING best.pt → RUNNING INFERENCE → PARSING BBOXES" : "PROBING SENSOR WAVEFORMS • RUNNING OBJECT EXTRACTION"}
