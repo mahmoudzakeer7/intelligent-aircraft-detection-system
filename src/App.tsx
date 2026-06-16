@@ -34,6 +34,7 @@ import { Header } from "./components/Header";
 import { Metrics } from "./components/Metrics";
 import { HistoryLog } from "./components/HistoryLog";
 import { ThreatAssessment } from "./components/ThreatAssessment";
+import { DetectionReport } from "./components/DetectionReport";
 import { Aircraft, DetectionResult, TabType, RadarLog, SystemMetrics, DetectionMode, YoloServiceStatus } from "./types";
 import { translations } from "./translations";
 
@@ -140,6 +141,7 @@ export default function App() {
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [detectionResult, setDetectionResult] = useState<DetectionResult | null>(null);
+  const [imageAspectRatio, setImageAspectRatio] = useState<string>("auto");
 
   // Hover & Bounding State
   const [hoveredAircraftIndex, setHoveredAircraftIndex] = useState<number | null>(null);
@@ -250,45 +252,56 @@ export default function App() {
 
   // ── YOLO video frame analysis loop ────────────────────────────────────────
   useEffect(() => {
+    let isActive = true;
+
     if (activeTab === "video" && isPlaying && videoSrc && detectionMode === "yolo" && yoloStatus.online) {
       setYoloVideoDetecting(true);
-      yoloVideoIntervalRef.current = setInterval(async () => {
+      
+      const processNextFrame = async () => {
+        if (!isActive) return;
+        
         const video = videoPlayerRef.current;
-        if (!video || video.paused || video.ended) return;
-
-        const frameBase64 = extractVideoFrame(video);
-        if (!frameBase64) return;
-
-        try {
-          const res = await fetch("/api/yolo-detect-frame", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ frame: frameBase64, mimeType: "image/jpeg", confidence: 0.25 }),
-          });
-          if (res.ok) {
-            const data: DetectionResult = await res.json();
-            setYoloVideoDetections(data.aircrafts || []);
-            setYoloFrameCount(prev => prev + 1);
-            if (data.totalCount > 0) {
-              setSimulatedCounter(prev => prev + data.totalCount);
+        if (video && !video.paused && !video.ended) {
+          const frameBase64 = extractVideoFrame(video);
+          if (frameBase64) {
+            try {
+              const res = await fetch("/api/yolo-detect-frame", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ frame: frameBase64, mimeType: "image/jpeg", confidence: 0.25 }),
+              });
+              
+              if (res.ok && isActive) {
+                const data: DetectionResult = await res.json();
+                setYoloVideoDetections(data.aircrafts || []);
+                setYoloFrameCount(prev => prev + 1);
+                if (data.totalCount > 0) {
+                  setSimulatedCounter(prev => prev + data.totalCount);
+                }
+              }
+            } catch {
+              // silent fail for network drops
             }
           }
-        } catch {
-          // silent fail for frame drops
         }
-      }, 2000); // analyze every 2 seconds
+        
+        // Loop immediately after receiving the result, with a tiny 50ms buffer 
+        // to prevent overloading the browser/server. This yields ~10-15 FPS.
+        if (isActive) {
+          setTimeout(processNextFrame, 50);
+        }
+      };
+
+      // Start the loop
+      processNextFrame();
+
     } else {
-      if (yoloVideoIntervalRef.current) {
-        clearInterval(yoloVideoIntervalRef.current);
-        yoloVideoIntervalRef.current = null;
-      }
       setYoloVideoDetecting(false);
       if (!isPlaying) setYoloVideoDetections([]);
     }
+
     return () => {
-      if (yoloVideoIntervalRef.current) {
-        clearInterval(yoloVideoIntervalRef.current);
-      }
+      isActive = false;
     };
   }, [activeTab, isPlaying, videoSrc, detectionMode, yoloStatus.online]);
 
@@ -836,13 +849,25 @@ export default function App() {
                       are children of the inner div, so their % coords map 1:1 to image pixels.
                     */
                     <div className="flex items-center justify-center w-full h-full p-2" dir="ltr">
-                      <div className="relative inline-block select-none" style={{ lineHeight: 0 }}>
-                        {/* Image fills the viewport, auto-sized to fit — the wrapper hugs it exactly */}
+                      {/* 
+                        Use aspect-ratio with w-full and max-h-[70vh].
+                        This ensures small images scale UP to fill the screen,
+                        but keep their precise dimensions so bounding boxes map 1:1.
+                      */}
+                      <div 
+                        className="relative mx-auto flex items-center justify-center w-full max-h-[70vh]" 
+                        style={{ aspectRatio: imageAspectRatio, maxHeight: '70vh' }}
+                      >
                         <img
                           src={selectedImage}
                           alt="Scanned Target"
-                          className="block max-h-[820px] max-w-full w-auto h-auto rounded-lg border border-white/5 opacity-90"
-                          style={{ display: "block" }}
+                          className="absolute inset-0 w-full h-full object-contain rounded-lg border border-white/5 opacity-90 shadow-2xl"
+                          onLoad={(e) => {
+                            const { naturalWidth, naturalHeight } = e.currentTarget;
+                            if (naturalWidth && naturalHeight) {
+                              setImageAspectRatio(`${naturalWidth} / ${naturalHeight}`);
+                            }
+                          }}
                           onError={(e) => {
                             // If preset image fails, clear and show upload prompt
                             const t = e.target as HTMLImageElement;
@@ -907,67 +932,28 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Technical Dossier Readout Panel integrated directly under the image viewport */}
-                <div className="p-5 border-t border-white/5 bg-slate-950/45 flex flex-col justify-between">
-                  <div>
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-white/5 pb-2.5 mb-3 flex items-center justify-between">
-                      <span>Technical Dossier & Object Readout</span>
-                      <span className="text-[9px] font-mono font-medium text-emerald-400 tracking-wider">SECURE TRANSMISSION TYPE-6</span>
+                {/* ── Full Intelligence Report Panel ──────────────────────────────────── */}
+                <div className="p-5 border-t border-white/5 bg-slate-950/45 flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 status-active-pulse"></span>
+                      Intelligence Dossier
                     </h4>
-
-                    {selectedAircraftIndex !== null && displayedAircrafts[selectedAircraftIndex] ? (
-                      <div className="space-y-3">
-                        <div>
-                          {/* Name and type badges */}
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold uppercase ${
-                                displayedAircrafts[selectedAircraftIndex].aircraftType.toLowerCase().includes("military") || 
-                                displayedAircrafts[selectedAircraftIndex].aircraftType.includes("عسكري")
-                                  ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                                  : "bg-sky-500/20 text-sky-400 border border-sky-400/30"
-                              }`}>
-                                {displayedAircrafts[selectedAircraftIndex].aircraftType}
-                              </span>
-                              {detectionResult?.detectionSource === "yolo" && displayedAircrafts[selectedAircraftIndex].rawClass && (
-                                <span className="text-[9px] px-2 py-0.5 rounded-md font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                  🤖 {displayedAircrafts[selectedAircraftIndex].rawClass}
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-sm font-black text-white">{displayedAircrafts[selectedAircraftIndex].aircraftName}</span>
-                          </div>
-                        </div>
-
-                        {/* Technical specifications write-up */}
-                        <p className="text-xs leading-relaxed text-slate-300 bg-slate-950/40 p-3 rounded-lg border border-white/5 text-right font-sans">
-                          {displayedAircrafts[selectedAircraftIndex].descriptionAr}
-                        </p>
-
-                        {/* Bounding box coordinates */}
-                        <div className="text-[10px] font-mono text-slate-400 bg-slate-900/40 p-2.5 rounded border border-white/5 grid grid-cols-2 gap-x-4 gap-y-1" dir="ltr">
-                          <span>xmin: <strong className="text-sky-300">{displayedAircrafts[selectedAircraftIndex].xmin}</strong></span>
-                          <span>ymin: <strong className="text-sky-300">{displayedAircrafts[selectedAircraftIndex].ymin}</strong></span>
-                          <span>xmax: <strong className="text-sky-300">{displayedAircrafts[selectedAircraftIndex].xmax}</strong></span>
-                          <span>ymax: <strong className="text-sky-300">{displayedAircrafts[selectedAircraftIndex].ymax}</strong></span>
-                          <span>confidence: <strong className="text-emerald-400">{(displayedAircrafts[selectedAircraftIndex].confidence * 100).toFixed(1)}%</strong></span>
-                          {displayedAircrafts[selectedAircraftIndex].classId !== undefined && (
-                            <span>class_id: <strong className="text-amber-400">{displayedAircrafts[selectedAircraftIndex].classId}</strong></span>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="py-6 text-center text-slate-500 text-xs flex flex-col items-center justify-center">
-                        <HelpCircle className="w-8 h-8 opacity-25 mb-1.5" />
-                        <p>Select an object from the list to query full high-fidelity military and industrial specifications.</p>
-                      </div>
-                    )}
+                    <span className="text-[9px] font-mono font-medium text-emerald-400 tracking-wider">SECURE TRANSMISSION TYPE-6</span>
                   </div>
 
-                  {/* System diagnostic message */}
+                  <DetectionReport
+                    aircraft={selectedAircraftIndex !== null ? displayedAircrafts[selectedAircraftIndex] : null}
+                    index={selectedAircraftIndex}
+                    totalDetected={displayedAircrafts.length}
+                    detectionResult={detectionResult}
+                    theme={theme}
+                  />
+
+                  {/* Executive summary bar */}
                   {detectionResult?.summaryAr && (
-                    <div className="bg-sky-500/5 p-3 rounded-xl border border-sky-400/25 mt-4 text-[11px] text-right text-sky-200">
-                      <span className="font-extrabold text-[#38bdf8] block mb-1">Executive Airspace Summary:</span>
+                    <div className="bg-sky-500/5 p-3 rounded-xl border border-sky-400/25 text-[11px] text-sky-200" dir="ltr">
+                      <span className="font-extrabold text-sky-400 block mb-1">▶ Executive Airspace Summary</span>
                       {detectionResult.summaryAr}
                     </div>
                   )}
@@ -1042,16 +1028,31 @@ export default function App() {
                   
                   {videoSrc ? (
                     <div className="flex items-center justify-center w-full h-full bg-black p-2" dir="ltr">
-                      <div className="relative inline-block select-none" style={{ lineHeight: 0 }}>
+                      {/*
+                        Same aspect-ratio trick as the image viewer:
+                        The wrapper matches the video's natural aspect ratio so bounding
+                        box % coordinates map 1:1 to the actual video pixels.
+                      */}
+                      <div
+                        className="relative mx-auto w-full"
+                        style={{ aspectRatio: "16/9", maxHeight: "580px" }}
+                      >
                         <video 
                           ref={videoPlayerRef}
                           src={videoSrc}
                           loop
-                          className="block max-h-[600px] max-w-full w-auto h-auto rounded-lg border border-white/5 opacity-90" 
+                          onLoadedMetadata={(e) => {
+                            const v = e.currentTarget;
+                            if (v.videoWidth && v.videoHeight) {
+                              // update the wrapper aspect-ratio to match actual video
+                              (v.parentElement as HTMLElement).style.aspectRatio = `${v.videoWidth} / ${v.videoHeight}`;
+                            }
+                          }}
+                          className="absolute inset-0 w-full h-full object-contain rounded-lg border border-white/5 opacity-90" 
                           onClick={toggleVideoPlayback}
                         />
 
-                        {/* YOLO real bounding boxes overlaid on video */}
+                        {/* YOLO real bounding boxes overlaid on video — % of wrapper = % of video pixels */}
                         {detectionMode === "yolo" && isPlaying && yoloVideoDetections.map((box, i) => {
                           const isMilitary = box.aircraftType.toLowerCase().includes("military") || box.aircraftType.includes("عسكري");
                           return (

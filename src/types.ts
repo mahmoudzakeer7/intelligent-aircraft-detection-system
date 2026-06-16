@@ -4,24 +4,41 @@
  */
 
 export interface Aircraft {
-  ymin: number; // Scale: 0 to 1000
+  // ── Bounding box (0–1000 scale) ──────────────────────────────────────────
+  ymin: number;
   xmin: number;
   ymax: number;
   xmax: number;
+
+  // ── Core detection ────────────────────────────────────────────────────────
   aircraftName: string;
   aircraftType: "Military" | "Civilian" | "Cargo" | "Private" | "Helicopter" | "Drone" | string;
-  confidence: number; // 0.0 to 1.0
+  confidence: number;   // 0.0 to 1.0
   descriptionAr: string;
-  classId?: number;   // YOLO class ID (only present for YOLO detections)
-  rawClass?: string;  // Raw YOLO class name (e.g. "drone", "airplane")
+
+  // ── YOLO metadata (only present for YOLO detections) ─────────────────────
+  classId?: number;
+  rawClass?: string;
+
+  // ── Rich intelligence fields from aircraft_info.json ─────────────────────
+  country?:               string;
+  manufacturer?:          string;
+  first_flight?:          string;
+  crew?:                  string;
+  max_speed?:             string;
+  range?:                 string;
+  primary_roles?:         string[];
+  recognition_features?:  string[];
+  strengths?:             string[];
+  weaknesses?:            string[];
 }
 
 export interface DetectionResult {
   totalCount: number;
   summaryAr: string;
   aircrafts: Aircraft[];
-  detectionSource?: "yolo" | "gemini" | "mock"; // Which AI model was used
-  modelClasses?: string[]; // YOLO model class names (only present for YOLO detections)
+  detectionSource?: "yolo" | "gemini" | "mock";
+  modelClasses?: string[];
 }
 
 export type TabType = "image" | "video" | "threat";
@@ -52,6 +69,7 @@ export interface SystemMetrics {
 export interface YoloServiceStatus {
   online: boolean;
   model_loaded?: boolean;
+  db_profiles?: number;
   classes?: Record<number, string>;
   message?: string;
 }
